@@ -1,78 +1,66 @@
-# Sesi 6: AI dan Penginderaan Jauh (Remote Sensing)
-**Klasifikasi Deforestasi Lanskap via Citra Udara Menggunakan *Convolutional Neural Network* (CNN)**
+# Deteksi Deforestasi via Penginderaan Jauh Menggunakan Convolutional Neural Network (CNN)
 
-## 📖 Deskripsi Studi Kasus
-Pemantauan kesehatan lahan, perluasan perkebunan, atau pelacakan laju deforestasi di wilayah beriklim tropis memakan biaya yang sangat mahal jika hanya mengandalkan survei lapangan (*ground patrol*) manual. Sebaliknya, data citra satelit (optik maupun radar) menyediakan visibilitas yang luas, namun membutuhkan interpretasi visual yang memakan waktu jika dilakukan oleh manusia.
+## Deskripsi
 
-Studi kasus ini mendemonstrasikan perancangan arsitektur algoritma *Deep Learning* berbasis *Convolutional Neural Network* (CNN) untuk mengekstraksi dan mengklasifikasikan pola piksel dari citra udara secara otomatis. Model ini bertugas membedakan secara biner antara citra yang merupakan "Kawasan Hijau/Sehat" dan citra yang terindikasi "Deforestasi/Lahan Kritis", yang nantinya dapat diintegrasikan ke dalam platform web pemantauan operasional.
+Proyek ini merupakan studi kasus penerapan *Deep Learning* untuk analisis citra penginderaan jauh (*Remote Sensing*). 
+Proyek ini mengadaptasi materi tentang visi komputer (*Computer Vision*) dan evaluasi model klasifikasi. Fokus utamanya adalah membangun arsitektur *Convolutional Neural Network* (CNN) untuk mendeteksi secara otomatis area lahan yang mengalami deforestasi atau kerusakan ekosistem dari udara, serta bagaimana menangani ketidakseimbangan kelas (*class imbalance*) dalam dataset lingkungan.
 
-## 🎯 Tujuan Eksekusi
-1. **Ekstraksi Fitur Spasial:** Menggunakan *Convolutional Layers* (Conv2D) untuk mengenali pola primitif citra seperti batas tepi, warna dedaunan, dan tekstur tanah tanpa rekayasa fitur manual (*hand-crafted features*).
-2. **Reduksi Dimensi:** Mengimplementasikan *Pooling Layers* (MaxPooling) untuk menyusutkan beban komputasi sambil mempertahankan informasi spasial yang paling dominan.
-3. **Klasifikasi Biner:** Membangun *Dense Layer* dengan fungsi aktivasi Sigmoid pada tahap akhir untuk mengeluarkan probabilitas (0 hingga 1) status kesehatan area tersebut.
+## Tujuan
 
-## 💻 Implementasi Kode (Python - TensorFlow & Keras)
-Berikut adalah skrip dasar perancangan arsitektur jaringannya yang dapat dijalankan melalui file `cnn_deforestation_classifier.py`.
+Tujuan proyek ini adalah:
+1. Memproses matriks citra digital 3 channel (RGB) menjadi fitur spasial menggunakan *Convolutional Layers*.
+2. Membangun model klasifikasi biner untuk membedakan antara "Kawasan Hijau (Aman)" dan "Lahan Kritis/Deforestasi".
+3. Mengetahui pengaruh *class weights* (pembobotan kelas) pada dataset yang tidak seimbang (area deforestasi biasanya lebih sedikit dari hutan normal).
+4. Mengevaluasi performa model menggunakan *Confusion Matrix* dan metrik *Recall* sebagai pendukung keputusan (*Decision Support*).
 
-```python
-import tensorflow as tf
-from tensorflow.keras import layers, models
-import numpy as np
+## Studi Kasus
 
-print("=== ARSITEKTUR CNN UNTUK DETEKSI DEFORESTASI ===\n")
+Kementerian Lingkungan Hidup dan Kehutanan (KLHK) menerima ribuan citra satelit/drone setiap minggunya untuk memantau laju deforestasi ilegal. Menginspeksi gambar ini secara manual sangat mahal dan lambat.
+Sistem AI ini dibangun sebagai *Decision Support System* untuk menyaring gambar. Sistem akan menyoroti citra yang terindikasi rusak agar segera diinspeksi oleh manusia. Dalam bisnis dan mitigasi lingkungan, gagal mendeteksi lahan yang gundul (*False Negative*) berakibat hilangnya ekosistem yang fatal. Oleh karena itu, model tidak hanya dinilai dari *Accuracy*, melainkan dari seberapa tinggi nilai *Recall* (kemampuan model menangkap sebanyak mungkin potensi deforestasi).
 
-# 1. Membangun Arsitektur Jaringan CNN
-def bangun_model_cnn():
-    model = models.Sequential()
-    
-    # Blok Ekstraksi Fitur 1
-    # Memproses input citra berukuran 128x128 piksel dengan 3 channel warna (RGB)
-    model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(128, 128, 3), name='Conv_1'))
-    model.add(layers.MaxPooling2D((2, 2), name='MaxPool_1'))
-    
-    # Blok Ekstraksi Fitur 2
-    model.add(layers.Conv2D(64, (3, 3), activation='relu', name='Conv_2'))
-    model.add(layers.MaxPooling2D((2, 2), name='MaxPool_2'))
-    
-    # Blok Ekstraksi Fitur 3
-    model.add(layers.Conv2D(64, (3, 3), activation='relu', name='Conv_3'))
-    
-    # Blok Klasifikasi
-    # Meratakan matriks menjadi array 1D
-    model.add(layers.Flatten(name='Flatten'))
-    
-    # Hidden layer untuk menalar fitur yang sudah diekstraksi
-    model.add(layers.Dense(64, activation='relu', name='Dense_Hidden'))
-    
-    # Output layer: 1 neuron dengan aktivasi Sigmoid untuk probabilitas Biner
-    # Output mendekati 0 -> Area Hijau/Hutan Normal
-    # Output mendekati 1 -> Deforestasi/Lahan Terbuka
-    model.add(layers.Dense(1, activation='sigmoid', name='Output_Layer'))
-    
-    return model
+## Dataset
 
-# Inisialisasi Model
-model_citra = bangun_model_cnn()
+Mengingat ukuran citra satelit asli sangat masif, dataset disimulasikan menggunakan Python dan NumPy.
+*   Total Data: 1.000 citra berukuran 64x64 piksel (RGB).
+*   Distribusi Kelas (*Class Imbalance*): 85% Kawasan Hijau (Kelas 0) dan 15% Deforestasi (Kelas 1).
+*   *Feature Engineering*: Citra "Hijau" disimulasikan memiliki dominasi nilai piksel pada *channel* warna hijau, sementara citra "Deforestasi" didominasi warna coklat/kemerahan agar CNN dapat mempelajari pola perbedaannya secara empiris.
 
-# 2. Kompilasi Model
-model_citra.compile(
-    optimizer='adam',
-    loss='binary_crossentropy',
-    metrics=['accuracy']
-)
+## Metode
 
-# Menampilkan Ringkasan Arsitektur
-print("--- Ringkasan Arsitektur Model ---")
-model_citra.summary()
+Tahapan utama yang dilakukan:
+1. *Image Data Generation & Augmentation Simulation* (Pembuatan dataset matriks 4D).
+2. *Train-Test Split* & *Normalization* (Skala piksel 0.0 - 1.0).
+3. *CNN Architecture Modeling* (Penyusunan layer Conv2D, MaxPooling, Flatten, dan Dense).
+4. *Imbalance Handling* (Penerapan parameter `class_weight` saat pelatihan).
+5. *Model Evaluation* (Analisis *Loss/Accuracy Curves* dan *Confusion Matrix*).
 
-# 3. Simulasi Pengujian Prediksi (Dummy Data)
-print("\n--- Simulasi Prediksi (Inference) ---")
-# Mensimulasikan 2 buah gambar udara berukuran 128x128 pixel (RGB) acak
-citra_dummy = np.random.rand(2, 128, 128, 3) 
+## Evaluasi
 
-# Meminta model memprediksi gambar dummy tersebut
-hasil_prediksi = model_citra.predict(citra_dummy)
+Performa model dievaluasi menggunakan:
+*   *Accuracy*: Tingkat kebenaran keseluruhan.
+*   *Precision*: Seberapa akurat model saat menebak deforestasi.
+*   *Recall*: Persentase deforestasi aktual yang berhasil dideteksi oleh sistem.
+*   *Confusion Matrix*: Pemetaan silang antara prediksi AI dan kebenaran lapangan (*Ground Truth*).
 
-for i, probabilitas in enumerate(hasil_prediksi):
-    status = "Deforestasi (Peringatan!)" if probabilitas[0] > 0.5 else "Kawasan Hijau (Normal)"
-    print(f"Citra #{i+1} -> Skor Klasifikasi: {probabilitas[0]:.4f} | Status: {status}")
+## Teknologi
+
+*   Python
+*   Google Colab / Jupyter Notebook (`.ipynb`)
+*   TensorFlow / Keras
+*   Scikit-Learn (Metrik Evaluasi)
+*   Matplotlib & Seaborn (Visualisasi)
+
+## Cara Menjalankan
+
+1. Proyek ini direkomendasikan untuk dijalankan di Google Colab (aktifkan akselerasi GPU: Runtime -> Change runtime type -> T4 GPU).
+2. Buka file `cnn_deforestation_classifier.ipynb`.
+3. Jalankan *notebook* dari awal hingga akhir.
+4. Grafik pelatihan (Loss/Accuracy) dan *Confusion Matrix* akan dirender secara otomatis pada *cell* evaluasi.
+
+## Struktur Repository
+
+```text
+sesi-6-cnn/
+├── c
+├── README.md
+└── requirements.txt
